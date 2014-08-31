@@ -18,7 +18,26 @@ import org.elasticsearch.common.Base64;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.BytesStream;
 
+/**
+ * An extended serializer for flume events into the same format LogStash uses</p>
+ * This adds some more features on top of the default ES serializer that is part of 
+ * the Flume distribution.</p>
+ * 
+ * For more details on added features:
+ * @see https://github.com/gigya/flume-ng-elasticsearch-ser-ex
+ * 
+ * @note This builder will not work when using the REST client of the ES sink 
+ * of Flume 1.5.X. The REST client does not use a builder.
+ * 
+ * 
+ * @author Rotem Hermon
+ *
+ */
 public class ExtendedElasticSearchIndexRequestBuilderFactory extends AbstractElasticSearchIndexRequestBuilderFactory {
+	/**
+	 * Configuration property, set to true to generate an _id for the indexed event, 
+	 * not letting ES to auto generate an _id. The _id is an MD5 of the serialized event. 
+	 */
 	public static final String GENERATE_ID = "generateId";
 	private boolean generateId = false;
 
@@ -28,9 +47,18 @@ public class ExtendedElasticSearchIndexRequestBuilderFactory extends AbstractEla
 		super(FastDateFormat.getInstance("yyyy.MM.dd", TimeZone.getTimeZone("Etc/UTC")));
 	}
 
+	public ExtendedElasticSearchIndexRequestBuilderFactory(FastDateFormat fd) {
+		super(fd);
+	}
+
 	public ExtendedElasticSearchIndexRequestBuilderFactory(ElasticSearchEventSerializer serializer) {
 		super(FastDateFormat.getInstance("yyyy.MM.dd", TimeZone.getTimeZone("Etc/UTC")));
 
+		this.serializer = serializer;
+	}
+
+	public ExtendedElasticSearchIndexRequestBuilderFactory(ElasticSearchEventSerializer serializer, FastDateFormat fd) {
+		super(fd);
 		this.serializer = serializer;
 	}
 
@@ -59,6 +87,8 @@ public class ExtendedElasticSearchIndexRequestBuilderFactory extends AbstractEla
 		.setType(indexType)
 		.setSource(contentBytes);
 		if (generateId){
+			// if we need to generate an _id for the event, get an MD5 hash for the serialized 
+			// event bytes.
 			String hashId;
 			try {
 				MessageDigest md = MessageDigest.getInstance("MD5");

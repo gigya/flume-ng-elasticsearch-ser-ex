@@ -38,10 +38,12 @@ import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 /**
- * Serialize flume events into the same format LogStash uses</p>
- * 
- * This can be used to send events to ElasticSearch and use clients such as
- * Kabana which expect Logstash formated indexes
+ * An extended serializer for flume events into the same format LogStash uses</p>
+ * This adds some more features on top of the default ES serializer that is part of 
+ * the Flume distribution.</p>
+ * For more details see: https://github.com/gigya/flume-ng-elasticsearch-ser-ex 
+ * </p>
+ * Logstash format:
  * 
  * <pre>
  * {
@@ -64,6 +66,8 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
  * output as long as the logstash fields are not already present.</p>
  * 
  * <pre>
+ *  message : String -> @message : String 
+ *     or body : String -> @message : String     
  *  timestamp: long -> @timestamp:Date
  *  host: String -> @source_host: String
  *  src_path: String -> @source_path: String
@@ -71,16 +75,29 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
  *  source: String -> @source: String
  * </pre>
  * 
- * @see https
- *      ://github.com/logstash/logstash/wiki/logstash%27s-internal-message-
- *      format
+ *      
+ * @author Rotem Hermon
  */
 public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSearchEventSerializer {
 
-	private Map<String, Boolean> objectFields = null;
+	/**
+	 * Configuration property to set fields that might contain a JSON string, to be
+	 * parsed as an object
+	 */
 	public static final String OBJECT_FIELDS = "objectFields";
+	/**
+	 * Configuration property, set to true to remove the logstash '@fields' prefix
+	 * for custom fields
+	 */
 	public static final String REMOVE_FIELDS_PREFIX = "removeFieldsPrefix";
+	/**
+	 * Configuration property, set to true to collect dot notated field names into an 
+	 * object (so 'params.f1' and 'params.f2' will be turned when indexed into
+	 * an object: { params : {f1 : ... , f2 : ... } }  
+	 */
 	public static final String COLLATE_OBJECTS = "collateObjects";
+
+	private Map<String, Boolean> objectFields = null;
 	private boolean removeFieldsPrefix = false;
 	private boolean collateObjects = false;
 	
