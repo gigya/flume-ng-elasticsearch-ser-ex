@@ -198,21 +198,20 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 				collectField(rest, val, fieldMap);
 			}
 		} else {
-			// this is a regular field, add the value
 			// check that this not overrides an existing object
 			Map<String, Object> fieldMap = getFieldMap(key, fields, false);
-			if (null == fieldMap) {
-				fields.put(key, val);
+			// this is a regular field, add the value. check if we should parse this 
+			// as an object
+			if (isObjectField(key) || null != fieldMap){
+				if (null == fieldMap)
+					fieldMap = getFieldMap(key, fields, true);
+				Map<String,Object> valMap = ContentBuilderUtilEx.tryParsingToMap(val);
+				if (null != valMap){
+					fieldMap.putAll(valMap);
+				}
 			}
 			else {
-				// if this field is configured as an object field, we may have a JSON 
-				// string here
-				if (isObjectField(key)){
-					Map<String,Object> valMap = ContentBuilderUtilEx.tryParsingToMap(val);
-					if (null != valMap){
-						fieldMap.putAll(valMap);
-					}
-				}
+				fields.put(key, val);
 			}
 		}
 	}

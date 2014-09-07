@@ -248,7 +248,45 @@ public class TestElasticSearchLogStashEventSerializer {
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);
 	}
-	
+
+	@Test
+	public void shouldParseNestedJSONInHeaderWhenCollating() throws Exception {
+		ExtendedElasticSearchLogStashEventSerializer fixture = new ExtendedElasticSearchLogStashEventSerializer();
+		Map<String, String> parameters = new HashMap<String, String>();
+		parameters.put("objectFields", "params");
+		parameters.put("collateObjects", "true");
+		Context context = new Context(parameters);
+		fixture.configure(context);
+
+		String message = "{flume: somethingnotvalid}";
+		String params = "{\"cmd\":\"api.method\",\"email\":\"my@gmail.com\", \"nested\" : { \"sub\" : 1 }}";
+		Map<String, String> headers = Maps.newHashMap();
+		long timestamp = System.currentTimeMillis();
+		headers.put("timestamp", String.valueOf(timestamp));
+		headers.put("params", params);
+		Event event = EventBuilder.withBody(message.getBytes(charset));
+		event.setHeaders(headers);
+
+		XContentBuilder expected = jsonBuilder().startObject();
+		expected.field("@message", new String(message.getBytes(), charset));
+		expected.field("@timestamp", new Date(timestamp));
+		expected.startObject("@fields");
+		expected.startObject("params");
+		expected.field("cmd", "api.method");
+		expected.startObject("nested");
+		expected.field("sub", 1);
+		expected.endObject();
+		expected.field("email", "my@gmail.com");
+		expected.endObject();
+		expected.endObject();
+		expected.endObject();
+
+		XContentBuilder actual = fixture.getContentBuilder(event);
+		String expectedStr = new String(expected.bytes().array());
+		String actualStr = new String(actual.bytes().array());
+		assertEquals(expectedStr, actualStr);
+	}
+
 	@Test
 	public void shouldCollateJSONInHeader() throws Exception {
 		ExtendedElasticSearchLogStashEventSerializer fixture = new ExtendedElasticSearchLogStashEventSerializer();
