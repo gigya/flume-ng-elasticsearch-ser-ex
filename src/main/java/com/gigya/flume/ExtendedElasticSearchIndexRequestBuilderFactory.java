@@ -79,27 +79,28 @@ public class ExtendedElasticSearchIndexRequestBuilderFactory extends AbstractEla
 	}
 
 	@Override
-	protected void prepareIndexRequest(IndexRequestBuilder indexRequest, String indexName, String indexType, Event event)
-			throws IOException {
+	protected void prepareIndexRequest(IndexRequestBuilder indexRequest, String indexName, String indexType, Event event) throws IOException {
 		BytesStream contentBuilder = serializer.getContentBuilder(event);
 		BytesReference contentBytes = contentBuilder.bytes();
-		indexRequest.setIndex(indexName)
-		.setType(indexType)
-		.setSource(contentBytes);
-		if (generateId){
-			// if we need to generate an _id for the event, get an MD5 hash for the serialized 
+		indexRequest.setIndex(indexName).setType(indexType).setSource(contentBytes);
+		if (generateId) {
+			// if we need to generate an _id for the event, get an MD5 hash for
+			// the serialized
 			// event bytes.
-			String hashId;
+			String hashId = null;
 			try {
-				MessageDigest md = MessageDigest.getInstance("MD5");
-				byte[] thedigest = md.digest(contentBytes.array());
-				hashId = Base64.encodeBytes(thedigest, Base64.URL_SAFE);
-				
+				byte[] bytes = contentBytes.toBytes();
+				if (contentBytes.length() > 0 && null != bytes) {
+					MessageDigest md = MessageDigest.getInstance("MD5");
+					byte[] thedigest = md.digest(bytes);
+					hashId = Base64.encodeBytes(thedigest, Base64.URL_SAFE);
+				}
 			} catch (NoSuchAlgorithmException e) {
 				Integer hash = contentBytes.hashCode();
 				hashId = hash.toString();
 			}
-			indexRequest.setId(hashId.toString());
+			if (null != hashId && !hashId.isEmpty())
+				indexRequest.setId(hashId.toString());
 		}
 	}
 
