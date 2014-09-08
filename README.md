@@ -17,13 +17,14 @@ a1.sinks.k1.serializer = com.gigya.flume.ExtendedElasticSearchIndexRequestBuilde
 ### Features ###
 
 This serializer fixes two issues that exist in the original serializer:
+
 1. Headers fields appearing twice in the serialized JSON objects.
 2. A problem with serializing headers that contains a JSON string.
 
 It also adds the following options:
 
 ##### Using the message header as @message #####
-The original serializer always uses the event body as the logstash @message field.   
+The original serializer always uses the event body as the logstash *@message* field.   
 The extended serializer will look first for a *"message"* header in the Flume event. If that doesn't exist it will use the event body. 
 
 ##### Removing the @fields prefix for custom fields #####
