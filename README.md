@@ -18,7 +18,7 @@ a1.sinks.k1.serializer = com.gigya.flume.ExtendedElasticSearchIndexRequestBuilde
 
 This serializer fixes two issues that exist in the original serializer:
 
-1. Headers fields appearing twice in the serialized JSON objects (See [Flume-2220](https://issues.apache.org/jira/browse/FLUME-2220).
+1. Headers fields appearing twice in the serialized JSON objects (See [Flume-2220](https://issues.apache.org/jira/browse/FLUME-2220)).
 2. A problem with serializing headers that contains a JSON string.
 
 It also adds the following options:
