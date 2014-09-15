@@ -75,7 +75,7 @@ Will be turned into:
 {   
    "params" : {   
       "f1.a" : 1,
-      "f2.b" : 1
+      "f2.b" : 2
    }
 }
 ```
@@ -98,7 +98,7 @@ Will be turned into:
          "a" : 1   
       },
       "f2" : {
-         "b" : 1   
+         "b" : 2   
       }
    }
 }
