@@ -96,10 +96,19 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 	 * an object: { params : {f1 : ... , f2 : ... } }  
 	 */
 	public static final String COLLATE_OBJECTS = "collateObjects";
+	/**
+	 * Configuration property to control the depth of object collating. 
+	 * Default is 1, meaning only the first object level will be collated. 
+	 * So for example: "params.f1.a" will be turned into  
+	 * { "params" : { "f1.a" : ... } }
+	 * Set to -1 for unlimited levels.  
+	 */
+	public static final String COLLATE_DEPTH = "collateDepth";
 
 	private Map<String, Boolean> objectFields = null;
 	private boolean removeFieldsPrefix = false;
 	private boolean collateObjects = false;
+	private int collateDepth = 1;
 	
 	@Override
 	public XContentBuilder getContentBuilder(Event event) throws IOException {
@@ -164,7 +173,7 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 			builder.startObject("@fields");
 		for (String key : headers.keySet()) {
 			if (collateObjects) {
-				collectField(key, headers.get(key), collatedFields);
+				collectField(key, headers.get(key), collatedFields, 1);
 			} else {
 				byte[] val = headers.get(key).getBytes(charset);
 				ContentBuilderUtilEx.appendField(builder, key, val, isObjectField(key));
@@ -179,9 +188,12 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 			builder.endObject();
 	}
 
-	private void collectField(String key, String val, Map<String, Object> fields) {
+	private void collectField(String key, String val, Map<String, Object> fields, int level) {
 		// see if we have an object dot notation
-		int pos = key.indexOf('.');
+		int pos = 0;
+		if (collateDepth < 0 || level <= collateDepth){
+			pos = key.indexOf('.');
+		}
 		if (pos > 0) {
 			// this is an object field. get the field name
 			String fieldName = key.substring(0, pos);
@@ -195,7 +207,7 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 				fields.put(key, val);
 			} else {
 				// process the rest of the field
-				collectField(rest, val, fieldMap);
+				collectField(rest, val, fieldMap, level+1);
 			}
 		} else {
 			// check that this not overrides an existing object
@@ -268,6 +280,16 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 				collateObjects = true;
 			}
 		}
+		if (StringUtils.isNotBlank(context.getString(COLLATE_DEPTH))) {
+			String depth = context.getString(COLLATE_DEPTH);
+			try{
+				collateDepth = Integer.parseInt(depth);
+			}
+			catch (Throwable t){
+			}
+			
+		}
+
 	}
 
 	@Override

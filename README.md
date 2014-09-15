@@ -59,7 +59,33 @@ a1.sinks.k1.serializer.objectFields = f1,f2
 ##### Collating objects #####
 Instead of using a single header with a JSON string as a value, you can specify fields of an object in separate header fields, using a dot notation of the full object field path.
 
-So for example, adding these events headers: 
+To configure the serializer to collate objects from headers use this setting (default is false):
+```
+a1.sinks.k1.serializer.collateObjects = true
+```
+
+By default the serializer will only collate the first level of the field name.   
+So, for example, adding these events headers: 
+```
+params.f1.a = 1
+params.f2.b = 2
+```
+Will be turned into:
+```
+{   
+   "params" : {   
+      "f1.a" : 1,
+      "f2.b" : 1
+   }
+}
+```
+
+You can control the collate depth using the *collateDepth* setting. Default is 1 (first level only). Setting it to -1 means unlimited depth:
+```
+a1.sinks.k1.serializer.collateDepth = -1
+```
+
+When setting the collate depth to be unlimited, the same event headers: 
 ```
 params.f1.a = 1
 params.f2.b = 2
@@ -76,10 +102,6 @@ Will be turned into:
       }
    }
 }
-```
-The serializer can be configured to collate objects from headers using this setting (default is false):
-```
-a1.sinks.k1.serializer.collateObjects = true
 ```
 ##### Generating document IDs for events #####
 The default Elasticsearch sink writes the events to Elasticsearch without specifying an ID for each document, letting Elasticsearch generate a new random ID for every event written. 

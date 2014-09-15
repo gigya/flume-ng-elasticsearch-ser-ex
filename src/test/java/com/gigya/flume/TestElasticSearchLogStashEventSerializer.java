@@ -293,6 +293,7 @@ public class TestElasticSearchLogStashEventSerializer {
 		Map<String, String> parameters = new HashMap<String, String>();
 		parameters.put("objectFields", "params, anotherField");
 		parameters.put("collateObjects", "true");
+		parameters.put("collateDepth", "-1");
 		Context context = new Context(parameters);
 		fixture.configure(context);
 
@@ -327,13 +328,92 @@ public class TestElasticSearchLogStashEventSerializer {
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);
 	}
-	
+
+	@Test
+	public void shouldCollateJSONDefaultOneLevel() throws Exception {
+		ExtendedElasticSearchLogStashEventSerializer fixture = new ExtendedElasticSearchLogStashEventSerializer();
+		Map<String, String> parameters = new HashMap<String, String>();
+		parameters.put("objectFields", "params, anotherField");
+		parameters.put("collateObjects", "true");
+		Context context = new Context(parameters);
+		fixture.configure(context);
+
+		String message = "{flume: somethingnotvalid}";
+		Map<String, String> headers = Maps.newHashMap();
+		long timestamp = System.currentTimeMillis();
+		headers.put("timestamp", String.valueOf(timestamp));
+		headers.put("params.cmd", "api.call");
+		headers.put("params.email", "my@gmail.com");
+		headers.put("params.timer.start", "1");
+		headers.put("params.timer.end", "2");
+		Event event = EventBuilder.withBody(message.getBytes(charset));
+		event.setHeaders(headers);
+
+		XContentBuilder expected = jsonBuilder().startObject();
+		expected.field("@message", new String(message.getBytes(), charset));
+		expected.field("@timestamp", new Date(timestamp));
+		expected.startObject("@fields");
+		expected.startObject("params");
+		expected.field("timer.start", "1");
+		expected.field("cmd", "api.call");
+		expected.field("email", "my@gmail.com");
+		expected.field("timer.end", "2");
+		expected.endObject();
+		expected.endObject();
+		expected.endObject();
+
+		XContentBuilder actual = fixture.getContentBuilder(event);
+		String expectedStr = new String(expected.bytes().array());
+		String actualStr = new String(actual.bytes().array());
+		assertEquals(expectedStr, actualStr);
+	}
+
+	@Test
+	public void shouldIgnoreInvalidCollateDepth() throws Exception {
+		ExtendedElasticSearchLogStashEventSerializer fixture = new ExtendedElasticSearchLogStashEventSerializer();
+		Map<String, String> parameters = new HashMap<String, String>();
+		parameters.put("objectFields", "params, anotherField");
+		parameters.put("collateObjects", "true");
+		parameters.put("collateDepth", "blabla");
+		Context context = new Context(parameters);
+		fixture.configure(context);
+
+		String message = "{flume: somethingnotvalid}";
+		Map<String, String> headers = Maps.newHashMap();
+		long timestamp = System.currentTimeMillis();
+		headers.put("timestamp", String.valueOf(timestamp));
+		headers.put("params.cmd", "api.call");
+		headers.put("params.email", "my@gmail.com");
+		headers.put("params.timer.start", "1");
+		headers.put("params.timer.end", "2");
+		Event event = EventBuilder.withBody(message.getBytes(charset));
+		event.setHeaders(headers);
+
+		XContentBuilder expected = jsonBuilder().startObject();
+		expected.field("@message", new String(message.getBytes(), charset));
+		expected.field("@timestamp", new Date(timestamp));
+		expected.startObject("@fields");
+		expected.startObject("params");
+		expected.field("timer.start", "1");
+		expected.field("cmd", "api.call");
+		expected.field("email", "my@gmail.com");
+		expected.field("timer.end", "2");
+		expected.endObject();
+		expected.endObject();
+		expected.endObject();
+
+		XContentBuilder actual = fixture.getContentBuilder(event);
+		String expectedStr = new String(expected.bytes().array());
+		String actualStr = new String(actual.bytes().array());
+		assertEquals(expectedStr, actualStr);
+	}
 	@Test
 	public void handleCollationAndJSONInHeader() throws Exception {
 		ExtendedElasticSearchLogStashEventSerializer fixture = new ExtendedElasticSearchLogStashEventSerializer();
 		Map<String, String> parameters = new HashMap<String, String>();
 		parameters.put("objectFields", "params, anotherField");
 		parameters.put("collateObjects", "true");
+		parameters.put("collateDepth", "-1");
 		Context context = new Context(parameters);
 		fixture.configure(context);
 
