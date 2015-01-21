@@ -129,7 +129,7 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 			collatedFields = Maps.newHashMap();
 
 		// look for a "message" header and append as body if exists
-		String message = headers.get("message");
+		String message = ensureFieldSize(headers.get("message"));
 		if (!StringUtils.isBlank(message) && StringUtils.isBlank(headers.get("@message"))) {
 			ContentBuilderUtilEx.appendField(builder, "@message", message.getBytes(charset), isObjectField("message"));
 			headers.remove("message");
@@ -138,32 +138,32 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 			appendBody(builder, event);
 		}
 
-		String timestamp = headers.get("timestamp");
+		String timestamp = ensureFieldSize(headers.get("timestamp"));
 		if (!StringUtils.isBlank(timestamp) && StringUtils.isBlank(headers.get("@timestamp"))) {
 			long timestampMs = Long.parseLong(timestamp);
 			builder.field("@timestamp", new Date(timestampMs));
 			headers.remove("timestamp");
 		}
 
-		String source = headers.get("source");
+		String source = ensureFieldSize(headers.get("source"));
 		if (!StringUtils.isBlank(source) && StringUtils.isBlank(headers.get("@source"))) {
 			ContentBuilderUtilEx.appendField(builder, "@source", source.getBytes(charset));
 			headers.remove("source");
 		}
 
-		String type = headers.get("type");
+		String type = ensureFieldSize(headers.get("type"));
 		if (!StringUtils.isBlank(type) && StringUtils.isBlank(headers.get("@type"))) {
 			ContentBuilderUtilEx.appendField(builder, "@type", type.getBytes(charset));
 			headers.remove("type");
 		}
 
-		String host = headers.get("host");
+		String host = ensureFieldSize(headers.get("host"));
 		if (!StringUtils.isBlank(host) && StringUtils.isBlank(headers.get("@source_host"))) {
 			ContentBuilderUtilEx.appendField(builder, "@source_host", host.getBytes(charset));
 			headers.remove("host");
 		}
 
-		String srcPath = headers.get("src_path");
+		String srcPath = ensureFieldSize(headers.get("src_path"));
 		if (!StringUtils.isBlank(srcPath) && StringUtils.isBlank(headers.get("@source_path"))) {
 			ContentBuilderUtilEx.appendField(builder, "@source_path", srcPath.getBytes(charset));
 			headers.remove("src_path");
@@ -175,7 +175,7 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 			if (collateObjects) {
 				collectField(key, headers.get(key), collatedFields, 1);
 			} else {
-				byte[] val = headers.get(key).getBytes(charset);
+				byte[] val = ensureFieldSize(headers.get(key)).getBytes(charset);
 				ContentBuilderUtilEx.appendField(builder, key, val, isObjectField(key));
 			}
 		}
@@ -188,6 +188,26 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 			builder.endObject();
 	}
 
+	private Object ensureFieldSize(Object field){
+		if (null != field){
+	        Class type = field.getClass();
+	        if (type == String.class) {
+	        	return ensureFieldSize((String)field);
+	        }
+		}
+		return field;
+	}
+	
+	private String ensureFieldSize(String field){
+		// Elasticsearch does not accept not analyzed fields that are bigger than 32K.
+		// We will trim all fields that are bigger than that to avoid an error.
+		if (null == field) return field;
+		// allow some overhead to make sure we're not over the limit
+		long size = field.length();
+		if (size < 30000) return field;
+		return field.substring(0, 30000);
+	}
+	
 	private void collectField(String key, String val, Map<String, Object> fields, int level) {
 		// see if we have an object dot notation
 		int pos = 0;
@@ -204,7 +224,7 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 			// one
 			// as a regular field and not as an object
 			if (null == fieldMap) {
-				fields.put(key, val);
+				fields.put(key, ensureFieldSize(val));
 			} else {
 				// process the rest of the field
 				collectField(rest, val, fieldMap, level+1);
@@ -219,11 +239,13 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 					fieldMap = getFieldMap(key, fields, true);
 				Map<String,Object> valMap = ContentBuilderUtilEx.tryParsingToMap(val);
 				if (null != valMap){
-					fieldMap.putAll(valMap);
+					for (String fieldName : valMap.keySet()){
+						fieldMap.put(fieldName, ensureFieldSize(valMap.get(fieldName)));
+					}
 				}
 			}
 			else {
-				fields.put(key, val);
+				fields.put(key, ensureFieldSize(val));
 			}
 		}
 	}
