@@ -68,7 +68,7 @@ public class TestElasticSearchLogStashEventSerializer {
 
 		expected.endObject();
 
-		XContentBuilder actual = fixture.getContentBuilder(event);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
 		assertEquals(new String(expected.bytes().array()), new String(actual.bytes().array()));
 	}
 
@@ -106,7 +106,7 @@ public class TestElasticSearchLogStashEventSerializer {
 
 		expected.endObject();
 
-		XContentBuilder actual = fixture.getContentBuilder(event);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
 		assertEquals(new String(expected.bytes().array()), new String(actual.bytes().array()));
 	}
 
@@ -142,7 +142,7 @@ public class TestElasticSearchLogStashEventSerializer {
 		expected.endObject();
 		expected.endObject();
 
-		XContentBuilder actual = fixture.getContentBuilder(event);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
 		String expectedStr = new String(expected.bytes().array());
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);
@@ -172,7 +172,7 @@ public class TestElasticSearchLogStashEventSerializer {
 		expected.endObject();
 		expected.endObject();
 
-		XContentBuilder actual = fixture.getContentBuilder(event);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
 		String expectedStr = new String(expected.bytes().array());
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);
@@ -206,7 +206,7 @@ public class TestElasticSearchLogStashEventSerializer {
 		expected.endObject();
 		expected.endObject();
 
-		XContentBuilder actual = fixture.getContentBuilder(event);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
 		String expectedStr = new String(expected.bytes().array());
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);
@@ -243,7 +243,7 @@ public class TestElasticSearchLogStashEventSerializer {
 		expected.endObject();
 		expected.endObject();
 
-		XContentBuilder actual = fixture.getContentBuilder(event);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
 		String expectedStr = new String(expected.bytes().array());
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);
@@ -281,7 +281,7 @@ public class TestElasticSearchLogStashEventSerializer {
 		expected.endObject();
 		expected.endObject();
 
-		XContentBuilder actual = fixture.getContentBuilder(event);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
 		String expectedStr = new String(expected.bytes().array());
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);
@@ -323,7 +323,7 @@ public class TestElasticSearchLogStashEventSerializer {
 		expected.endObject();
 		expected.endObject();
 
-		XContentBuilder actual = fixture.getContentBuilder(event);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
 		String expectedStr = new String(expected.bytes().array());
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);
@@ -362,7 +362,7 @@ public class TestElasticSearchLogStashEventSerializer {
 		expected.endObject();
 		expected.endObject();
 
-		XContentBuilder actual = fixture.getContentBuilder(event);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
 		String expectedStr = new String(expected.bytes().array());
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);
@@ -402,7 +402,7 @@ public class TestElasticSearchLogStashEventSerializer {
 		expected.endObject();
 		expected.endObject();
 
-		XContentBuilder actual = fixture.getContentBuilder(event);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
 		String expectedStr = new String(expected.bytes().array());
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);
@@ -446,7 +446,7 @@ public class TestElasticSearchLogStashEventSerializer {
 		expected.endObject();
 		expected.endObject();
 
-		XContentBuilder actual = fixture.getContentBuilder(event);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
 		String expectedStr = new String(expected.bytes().array());
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);

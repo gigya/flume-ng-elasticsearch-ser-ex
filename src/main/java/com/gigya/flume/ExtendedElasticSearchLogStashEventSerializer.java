@@ -35,6 +35,7 @@ import org.apache.flume.conf.ComponentConfiguration;
 import org.apache.flume.sink.elasticsearch.ElasticSearchEventSerializer;
 import org.apache.lucene.analysis.compound.DictionaryCompoundWordTokenFilter;
 import org.elasticsearch.common.collect.Maps;
+import org.elasticsearch.common.io.BytesStream;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 /**
@@ -110,11 +111,15 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 	private boolean collateObjects = false;
 	private int collateDepth = 1;
 	
-	@Override
-	public XContentBuilder getContentBuilder(Event event) throws IOException {
+	public XContentBuilder getXContentBuilder(Event event) throws IOException {
 		XContentBuilder builder = jsonBuilder().startObject();
 		appendHeaders(builder, event);
 		return builder;
+	}
+
+	@Override
+	public BytesStream getContentBuilder(Event event) throws IOException {
+		return getXContentBuilder(event);
 	}
 
 	private void appendBody(XContentBuilder builder, Event event) throws IOException, UnsupportedEncodingException {
