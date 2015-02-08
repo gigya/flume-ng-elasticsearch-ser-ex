@@ -23,6 +23,8 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -32,8 +34,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.conf.ComponentConfiguration;
+import org.apache.flume.sink.elasticsearch.DocumentIdBuilder;
 import org.apache.flume.sink.elasticsearch.ElasticSearchEventSerializer;
 import org.apache.lucene.analysis.compound.DictionaryCompoundWordTokenFilter;
+import org.elasticsearch.common.Base64;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.io.BytesStream;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -79,7 +84,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
  *      
  * @author Rotem Hermon
  */
-public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSearchEventSerializer {
+public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSearchEventSerializer, DocumentIdBuilder {
 
 	/**
 	 * Configuration property to set fields that might contain a JSON string, to be
@@ -105,6 +110,12 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 	 * Set to -1 for unlimited levels.  
 	 */
 	public static final String COLLATE_DEPTH = "collateDepth";
+	/**
+	 * Configuration property, set to true to generate an _id for the indexed event, 
+	 * not letting ES to auto generate an _id. The _id is an MD5 of the serialized event. 
+	 */
+	public static final String GENERATE_ID = "generateId";
+	private boolean generateId = false;
 
 	private Map<String, Boolean> objectFields = null;
 	private boolean removeFieldsPrefix = false;
@@ -316,11 +327,43 @@ public class ExtendedElasticSearchLogStashEventSerializer implements ElasticSear
 			}
 			
 		}
-
+		if (StringUtils.isNotBlank(context.getString(GENERATE_ID))) {
+			String remove = context.getString(GENERATE_ID);
+			if ("true".equalsIgnoreCase(remove) || "1".equalsIgnoreCase(remove)) {
+				generateId = true;
+			}
+		}
 	}
 
 	@Override
 	public void configure(ComponentConfiguration conf) {
 		// NO-OP...
+	}
+
+	@Override
+	public String getDocumentId(BytesReference contentBytes) {
+		if (generateId) {
+			// if we need to generate an _id for the event, get an MD5 hash for
+			// the serialized
+			// event bytes.
+			String hashId = null;
+			try {
+				byte[] bytes = contentBytes.toBytes();
+				if (contentBytes.length() > 0 && null != bytes) {
+					MessageDigest md = MessageDigest.getInstance("MD5");
+					byte[] thedigest = md.digest(bytes);
+					hashId = Base64.encodeBytes(thedigest, Base64.URL_SAFE);
+					// remove padding 
+					if (hashId.endsWith("=="))
+						hashId = hashId.substring(0, hashId.length()-2);
+				}
+			} catch (NoSuchAlgorithmException | IOException e) {
+				Integer hash = contentBytes.hashCode();
+				hashId = hash.toString();
+			}
+			if (null != hashId && !hashId.isEmpty())
+				return hashId;
+		}
+		return null;
 	}
 }

@@ -18,6 +18,7 @@
  */
 package com.gigya.flume;
 
+import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.EventDeliveryException;
 import org.apache.flume.event.EventBuilder;
@@ -31,6 +32,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -85,7 +87,6 @@ public class TestElasticSearchRestClient {
     when(nameBuilder.getIndexName(any(Event.class))).thenReturn(INDEX_NAME);
     when(bytesReference.toBytesArray()).thenReturn(new BytesArray(MESSAGE_CONTENT));
     when(bytesStream.bytes()).thenReturn(bytesReference);
-    //when(serializer.getContentBuilder(any(Event.class))).thenReturn(bytesStream);
     serializer = new ExtendedElasticSearchLogStashEventSerializer();
 	Map<String, String> headers = Maps.newHashMap();
 	String message = "body";

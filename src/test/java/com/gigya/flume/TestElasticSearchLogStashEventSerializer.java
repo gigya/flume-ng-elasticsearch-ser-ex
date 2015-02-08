@@ -21,6 +21,8 @@ package com.gigya.flume;
 import static org.apache.flume.sink.elasticsearch.ElasticSearchEventSerializer.charset;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -29,6 +31,8 @@ import java.util.Map;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.event.EventBuilder;
+import org.apache.flume.sink.elasticsearch.DocumentIdBuilder;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.junit.Test;
@@ -451,4 +455,32 @@ public class TestElasticSearchLogStashEventSerializer {
 		String actualStr = new String(actual.bytes().array());
 		assertEquals(expectedStr, actualStr);
 	}
+	
+	@Test
+	public void shouldGenerateObjectID() throws Exception {
+		ExtendedElasticSearchLogStashEventSerializer fixture = new ExtendedElasticSearchLogStashEventSerializer();
+		Map<String, String> parameters = new HashMap<String, String>();
+		parameters.put("generateId", "true");
+		Context context = new Context(parameters);
+		fixture.configure(context);
+
+		String message = "test body";
+		Map<String, String> headers = Maps.newHashMap();
+		long timestamp = System.currentTimeMillis();
+		headers.put("timestamp", String.valueOf(timestamp));
+		headers.put("source", "flume_tail_src");
+		headers.put("host", "test@localhost");
+		headers.put("src_path", "/tmp/test");
+		headers.put("headerNameOne", "headerValueOne");
+		headers.put("headerNameTwo", "headerValueTwo");
+		headers.put("type", "sometype");
+		Event event = EventBuilder.withBody(message.getBytes(charset));
+		event.setHeaders(headers);
+		XContentBuilder actual = fixture.getXContentBuilder(event);
+		DocumentIdBuilder idBuilder = (DocumentIdBuilder)fixture;
+		String id = idBuilder.getDocumentId(actual.bytes());
+		assertNotNull(id);
+				
+	}
+	
 }

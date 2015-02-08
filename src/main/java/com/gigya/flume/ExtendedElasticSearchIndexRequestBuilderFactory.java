@@ -11,6 +11,7 @@ import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.conf.ComponentConfiguration;
 import org.apache.flume.sink.elasticsearch.AbstractElasticSearchIndexRequestBuilderFactory;
+import org.apache.flume.sink.elasticsearch.DocumentIdBuilder;
 import org.apache.flume.sink.elasticsearch.ElasticSearchEventSerializer;
 import org.apache.flume.sink.elasticsearch.ElasticSearchIndexRequestBuilderFactory;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -34,14 +35,9 @@ import org.elasticsearch.common.io.BytesStream;
  *
  */
 public class ExtendedElasticSearchIndexRequestBuilderFactory extends AbstractElasticSearchIndexRequestBuilderFactory {
-	/**
-	 * Configuration property, set to true to generate an _id for the indexed event, 
-	 * not letting ES to auto generate an _id. The _id is an MD5 of the serialized event. 
-	 */
-	public static final String GENERATE_ID = "generateId";
-	private boolean generateId = false;
 
 	private ElasticSearchEventSerializer serializer = new ExtendedElasticSearchLogStashEventSerializer();
+	private DocumentIdBuilder docIdBuilder = (DocumentIdBuilder)serializer;
 
 	public ExtendedElasticSearchIndexRequestBuilderFactory() {
 		super(FastDateFormat.getInstance("yyyy.MM.dd", TimeZone.getTimeZone("Etc/UTC")));
@@ -65,12 +61,6 @@ public class ExtendedElasticSearchIndexRequestBuilderFactory extends AbstractEla
 	@Override
 	public void configure(Context context) {
 		serializer.configure(context);
-		if (StringUtils.isNotBlank(context.getString(GENERATE_ID))) {
-			String remove = context.getString(GENERATE_ID);
-			if ("true".equalsIgnoreCase(remove) || "1".equalsIgnoreCase(remove)) {
-				generateId = true;
-			}
-		}
 	}
 
 	@Override
@@ -83,25 +73,9 @@ public class ExtendedElasticSearchIndexRequestBuilderFactory extends AbstractEla
 		BytesStream contentBuilder = serializer.getContentBuilder(event);
 		BytesReference contentBytes = contentBuilder.bytes();
 		indexRequest.setIndex(indexName).setType(indexType).setSource(contentBytes);
-		if (generateId) {
-			// if we need to generate an _id for the event, get an MD5 hash for
-			// the serialized
-			// event bytes.
-			String hashId = null;
-			try {
-				byte[] bytes = contentBytes.toBytes();
-				if (contentBytes.length() > 0 && null != bytes) {
-					MessageDigest md = MessageDigest.getInstance("MD5");
-					byte[] thedigest = md.digest(bytes);
-					hashId = Base64.encodeBytes(thedigest, Base64.URL_SAFE);
-				}
-			} catch (NoSuchAlgorithmException e) {
-				Integer hash = contentBytes.hashCode();
-				hashId = hash.toString();
-			}
-			if (null != hashId && !hashId.isEmpty())
-				indexRequest.setId(hashId.toString());
-		}
+		String hashId = docIdBuilder.getDocumentId(contentBytes);
+		if (null != hashId && !hashId.isEmpty())
+			indexRequest.setId(hashId.toString());
 	}
 
 }
