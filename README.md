@@ -6,6 +6,11 @@ This is an extended logstash format serializer for the [Elasticsearch sink for F
 We're using Flume at [Gigya](http://gigya.com) for shipping logs and application events to Elasticsearch, later querying them using [kibana](http://www.elasticsearch.org/overview/kibana/).   
 This analyzer fixes some issues we've encountered with the original serializer, and adds additional functionality that we found useful.
 
+### Building ###
+This serializer depends on a forked version of Flume 1.5.2, that contains a change in the Elasticsearch sink.    
+The fork can be found here - https://github.com/gigya/flume/tree/flume-1.5-es-sink-change   
+You need to build and use the changed Elasticsearch sink from that fork as it contains an additional DocumentIdBuilder class that was added to be able to set the document ID when using the HTTP mode in the sink.
+
 ### Using ###
 To use this serializer follow the instructions for configuring the [Elasticsearch sink for Flume](http://flume.apache.org/FlumeUserGuide.html#elasticsearchsink).   
 Then configure the sink to use the extended serializer:
@@ -117,8 +122,6 @@ You can configure the serializer to generate document IDs using this setting:
 a1.sinks.k1.serializer.generateId = true
 ```
 
-**Important Note:**
-The generation of document IDs happens in the request builder factory class (ExtendedElasticSearchIndexRequestBuilderFactory). This will **not** work if using the new Elasticsearch HTTP API option, available in Flume 1.5.0 ([see here](https://issues.apache.org/jira/browse/FLUME-2225)). This is because the added support for the HTTP API does not use the request builder factory and does not provide an option to manipulate the metadata for the indexed document.
-  
+
 
  
